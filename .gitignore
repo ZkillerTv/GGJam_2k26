@@ -13,6 +13,8 @@
 /[Uu]ser[Ss]ettings/
 *.log
 
+
+
 # Blender
 *.blend1
 *.blend1.meta
