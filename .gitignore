@@ -1,8 +1,10 @@
 # Unity generated
 .utmp/
 /[Ll]ibrary/
+[Ll]ibrary/
 # Artifacts and all generated subdirs (00/, 01/, ...)
 /[Ll]ibrary/[Aa]rtifacts/
+[Ll]ibrary/[Aa]rtifacts/
 /[Tt]emp/
 /[Oo]bj/
 /[Bb]uild/
