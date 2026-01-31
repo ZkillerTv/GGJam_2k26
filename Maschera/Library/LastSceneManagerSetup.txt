@@ -1,5 +1,5 @@
 sceneSetups:
-- path: "Assets/Scenes/Citt\xE0.unity"
+- path: Assets/Scenes/Livello_Calma_02.unity
   isLoaded: 1
   isActive: 1
   isSubScene: 0
