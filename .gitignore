@@ -71,6 +71,10 @@ InitTestScene*.unity*
 # Visual Scripting generated
 **/Unity.VisualScripting.Generated/
 
+# TextMesh Pro Essential Resources (re-importable from package: Window > TextMeshPro > Import TMP Essential Resources)
+**/Assets/TextMesh Pro/
+**/Assets/TextMesh Pro.meta
+
 # Play mode test scenes
 **/[Ii]nit[Tt]est[Ss]cene*.unity*
 
