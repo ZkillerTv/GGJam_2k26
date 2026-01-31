@@ -6,31 +6,38 @@ using UnityEngine.InputSystem;
 public class RockDrag2D : MonoBehaviour
 {
     [Header("Impostazioni Movimento")]
-    [Tooltip("Velocità di inseguimento del mouse. Più è basso, più è 'Zen'.")]
-    public float followSpeed = 20f;
-    
-    [Tooltip("Distanza della roccia dalla telecamera (di solito 10 per giochi 2D).")]
+    public float followSpeed = 15f;
     public float zOffset = 10f;
+    
+    [Header("Impostazioni Lancio")]
+    [Tooltip("Forza impressa al rilascio.")]
+    public float throwForceMultiplier = 0.5f;
+    [Tooltip("Velocità massima che la roccia può raggiungere al lancio.")]
+    public float maxThrowSpeed = 10f;
+
+    [Header("Impostazioni Rotazione")]
+    public float rotationSpeed = 150f;
 
     private GameObject selectedRock;
     private Rigidbody2D rb;
     private bool isDragging = false;
 
+    private Vector2 lastPosition;
+    private Vector2 currentVelocity;
+
     void Update()
     {
-        // 1. RILEVAMENTO DEL CLICK (Inizio Trascinamento)
         if (Mouse.current.leftButton.wasPressedThisFrame)
         {
             StartDragging();
         }
 
-        // 2. LOGICA DI TRASCINAMENTO (Durante la pressione)
         if (isDragging && selectedRock != null)
         {
-            UpdatePosition();
+            UpdatePositionAndVelocity();
+            HandleRotation();
         }
 
-        // 3. RILASCIO (Fine Trascinamento)
         if (Mouse.current.leftButton.wasReleasedThisFrame && selectedRock != null)
         {
             StopDragging();
@@ -39,7 +46,6 @@ public class RockDrag2D : MonoBehaviour
 
     private void StartDragging()
     {
-        // Spariamo un raggio dalla camera verso il mouse
         Ray ray = Camera.main.ScreenPointToRay(Mouse.current.position.ReadValue());
         RaycastHit2D hit = Physics2D.GetRayIntersection(ray);
 
@@ -50,45 +56,60 @@ public class RockDrag2D : MonoBehaviour
 
             if (rb != null)
             {
-                // Disabilitiamo la fisica per poterla muovere liberamente
                 rb.bodyType = RigidbodyType2D.Kinematic;
                 rb.velocity = Vector2.zero;
                 rb.angularVelocity = 0f;
             }
 
             isDragging = true;
-            Debug.Log("Roccia agganciata: " + selectedRock.name);
+            lastPosition = selectedRock.transform.position;
         }
     }
 
-    private void UpdatePosition()
+    private void UpdatePositionAndVelocity()
     {
-        // Prendiamo la posizione del mouse in pixel
-        Vector3 mousePos = Mouse.current.position.ReadValue();
-        
-        // Impostiamo la profondità corretta per la conversione in coordinate mondo
-        mousePos.z = zOffset; 
+        Vector3 mouseInput = Mouse.current.position.ReadValue();
+        mouseInput.z = zOffset;
+        Vector3 targetPos = Camera.main.ScreenToWorldPoint(mouseInput);
+        targetPos.z = 0f;
 
-        // Convertiamo i pixel in coordinate del mondo di gioco
-        Vector3 targetPosition = Camera.main.ScreenToWorldPoint(mousePos);
+        // Calcolo velocità basato sullo spostamento effettivo
+        // Usiamo un piccolo smorzamento (0.1f) invece di deltaTime puro per evitare picchi
+        Vector2 frameVelocity = ((Vector2)targetPos - lastPosition) / Time.deltaTime;
         
-        // Manteniamo l'oggetto a Z = 0 (fondamentale per il 2D)
-        targetPosition.z = 0f;
+        // Applichiamo un filtro per rendere la velocità meno nervosa
+        currentVelocity = Vector2.Lerp(currentVelocity, frameVelocity, 20f * Time.deltaTime);
+        lastPosition = selectedRock.transform.position;
 
-        // Muoviamo la roccia verso il mouse in modo fluido
-        selectedRock.transform.position = Vector3.Lerp(selectedRock.transform.position, targetPosition, Time.deltaTime * followSpeed);
+        selectedRock.transform.position = Vector3.Lerp(selectedRock.transform.position, targetPos, Time.deltaTime * followSpeed);
+    }
+
+    private void HandleRotation()
+    {
+        if (Keyboard.current.aKey.isPressed)
+            selectedRock.transform.Rotate(0, 0, rotationSpeed * Time.deltaTime);
+        if (Keyboard.current.dKey.isPressed)
+            selectedRock.transform.Rotate(0, 0, -rotationSpeed * Time.deltaTime);
     }
 
     private void StopDragging()
     {
         if (rb != null)
         {
-            // Riattiviamo la gravità e la fisica
             rb.bodyType = RigidbodyType2D.Dynamic;
+            
+            // CALCOLO DEL LANCIO CON LIMITATORE
+            Vector2 throwVelocity = currentVelocity * throwForceMultiplier;
+            
+            // Limitiamo la velocità massima per evitare che schizzi via
+            rb.velocity = Vector2.ClampMagnitude(throwVelocity, maxThrowSpeed);
         }
 
-        Debug.Log("Roccia rilasciata.");
         isDragging = false;
         selectedRock = null;
+    }
+    public bool GetIsDragging()
+    {
+        return isDragging;
     }
 }
